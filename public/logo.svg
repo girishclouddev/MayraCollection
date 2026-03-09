@@ -1,0 +1,18 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Monogram Circle -->
+  <circle cx="200" cy="200" r="140" fill="none" stroke="#D4AF37" stroke-width="6"/>
+
+  <!-- M Monogram -->
+  <text x="200" y="255"
+        text-anchor="middle"
+        font-family="Playfair Display, serif"
+        font-size="160"
+        fill="#D4AF37"
+        font-weight="600">
+        M
+  </text>
+
+  <!-- Diamond Accent -->
+  <polygon points="200,45 215,75 200,105 185,75"
+           fill="#D4AF37"/>
+</svg>
