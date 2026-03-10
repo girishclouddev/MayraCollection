@@ -7,8 +7,6 @@ import Jewelry from './pages/Jewelry';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import AdminDashboard from './admin/AdminDashboard';
-import { useEffect } from 'react';
-import { initDummyData } from './utils/localStorage';
 import { Instagram, Phone } from 'lucide-react';
 
 // Simple auth check for ProtectedRoute
@@ -18,11 +16,6 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  // Initialize dummy data on first load
-  useEffect(() => {
-    initDummyData();
-  }, []);
-
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col font-sans relative">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
-import { getProducts, placeOrder } from '../utils/localStorage';
+import { getProducts, updateQuantity } from '../services/productService';
 import { Shirt } from 'lucide-react';
 
 const Clothes = () => {
@@ -10,14 +10,25 @@ const Clothes = () => {
     useEffect(() => {
         // Scroll to top
         window.scrollTo(0, 0);
-        const allProducts = getProducts();
-        setProducts(allProducts.filter(p => p.category === 'Clothes'));
+        const fetchProducts = async () => {
+            try {
+                const allProducts = await getProducts();
+                setProducts(allProducts.filter(p => p.category === 'Clothes'));
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            }
+        };
+        fetchProducts();
     }, []);
 
-    const handleOrder = (id) => {
-        const updatedProduct = placeOrder(id);
-        if (updatedProduct) {
-            setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
+    const handleOrder = async (product) => {
+        try {
+            const updatedProduct = await updateQuantity(product.id, product.quantity - 1);
+            if (updatedProduct) {
+                setProducts(prev => prev.map(p => p.id === product.id ? updatedProduct : p));
+            }
+        } catch (error) {
+            console.error('Error updating quantity:', error);
         }
     };
 
@@ -57,7 +68,7 @@ const Clothes = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                         >
-                            <ProductCard product={product} onOrder={() => handleOrder(product.id)} />
+                            <ProductCard product={product} onOrder={() => handleOrder(product)} />
                         </motion.div>
                     ))}
                 </div>

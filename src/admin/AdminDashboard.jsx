@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import imageCompression from 'browser-image-compression';
 import { Plus, Trash2, ArrowUp, ArrowDown, LogOut, CheckCircle, Edit3, Image as ImageIcon } from 'lucide-react';
-import { getProducts, addProduct, updateProduct, deleteProduct, saveProducts } from '../utils/localStorage';
+import { getProducts, addProduct, updateProduct, deleteProduct, updateQuantity } from '../services/productService';
 import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -26,7 +26,15 @@ const AdminDashboard = () => {
         if (localStorage.getItem('isAdminAuth') !== 'true') {
             navigate('/login');
         } else {
-            setProducts(getProducts());
+            const fetchProducts = async () => {
+                try {
+                    const data = await getProducts();
+                    setProducts(data || []);
+                } catch (error) {
+                    console.error('Error fetching products', error);
+                }
+            };
+            fetchProducts();
         }
     }, [navigate]);
 
@@ -90,7 +98,7 @@ const AdminDashboard = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.image) {
             toast.error('Please upload an image');
@@ -106,67 +114,104 @@ const AdminDashboard = () => {
             image: formData.image,
         };
 
-        if (editingId) {
-            updateProduct(editingId, productData);
-            setProducts(products.map(p => p.id === editingId ? { ...p, ...productData } : p));
-            toast.success('Product updated successfully!');
-            handleCancelEdit();
-        } else {
-            const added = addProduct(productData);
-            setProducts([...products, added].sort((a, b) => a.order - b.order));
+        try {
+            if (editingId) {
+                const updated = await updateProduct(editingId, productData);
+                if (updated) {
+                    setProducts(products.map(p => p.id === editingId ? { ...p, ...updated } : p));
+                }
+                toast.success('Product updated successfully!');
+                handleCancelEdit();
+            } else {
+                const added = await addProduct(productData);
+                if (added) {
+                    setProducts([added, ...products]);
+                }
 
-            // Reset form
-            setFormData({
-                name: '',
-                price: '',
-                description: '',
-                category: 'Clothes',
-                quantity: '',
-                image: null,
-            });
+                // Reset form
+                setFormData({
+                    name: '',
+                    price: '',
+                    description: '',
+                    category: 'Clothes',
+                    quantity: '',
+                    image: null,
+                });
 
-            // Reset file input
-            document.getElementById('imageUpload').value = '';
-            toast.success('Product added successfully!');
+                // Reset file input
+                document.getElementById('imageUpload').value = '';
+                toast.success('Product added successfully!');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Operation failed');
         }
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this product?')) {
-            deleteProduct(id);
-            setProducts(products.filter(p => p.id !== id));
-            toast.success('Product deleted');
+            try {
+                await deleteProduct(id);
+                setProducts(products.filter(p => p.id !== id));
+                toast.success('Product deleted');
+            } catch (error) {
+                console.error(error);
+                toast.error('Failed to delete product');
+            }
         }
     };
 
-    const handleUpdateQuantity = (id, newQuantity) => {
-        updateProduct(id, { quantity: Number(newQuantity) });
-        setProducts(products.map(p => p.id === id ? { ...p, quantity: Number(newQuantity) } : p));
-        toast.success('Quantity updated');
+    const handleUpdateQuantity = async (id, newQuantity) => {
+        try {
+            await updateQuantity(id, Number(newQuantity));
+            setProducts(products.map(p => p.id === id ? { ...p, quantity: Number(newQuantity) } : p));
+            toast.success('Quantity updated');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to update quantity');
+        }
     };
 
-    const handleMarkSoldOut = (id) => {
-        updateProduct(id, { quantity: 0 });
-        setProducts(products.map(p => p.id === id ? { ...p, quantity: 0 } : p));
-        toast.success('Marked as Sold Out');
+    const handleMarkSoldOut = async (id) => {
+        try {
+            await updateQuantity(id, 0);
+            setProducts(products.map(p => p.id === id ? { ...p, quantity: 0 } : p));
+            toast.success('Marked as Sold Out');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to mark sold out');
+        }
     };
 
-    const handleMove = (index, direction) => {
+    const handleMove = async (index, direction) => {
         if (
             (direction === -1 && index === 0) ||
             (direction === 1 && index === products.length - 1)
         ) return;
 
         const newProducts = [...products];
-        // Swap elements
-        const temp = newProducts[index];
-        newProducts[index] = newProducts[index + direction];
-        newProducts[index + direction] = temp;
+        const current = newProducts[index];
+        const other = newProducts[index + direction];
 
-        // Update order property
-        const updatedProducts = newProducts.map((p, i) => ({ ...p, order: i + 1 }));
-        saveProducts(updatedProducts);
-        setProducts(updatedProducts);
+        // Swap their created_at in the frontend
+        const tempCreatedAt = current.created_at;
+        current.created_at = other.created_at;
+        other.created_at = tempCreatedAt;
+
+        // Swap in array
+        newProducts[index] = other;
+        newProducts[index + direction] = current;
+
+        setProducts(newProducts);
+
+        // Update backend
+        try {
+            if (current.created_at) await updateProduct(current.id, { created_at: current.created_at });
+            if (other.created_at) await updateProduct(other.id, { created_at: other.created_at });
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to update order strictly');
+        }
     };
 
     return (

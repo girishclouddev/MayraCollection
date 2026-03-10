@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronRight, Diamond, Shirt } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { getProducts, placeOrder } from '../utils/localStorage';
+import { getProducts, updateQuantity } from '../services/productService';
 
 const Hero = () => {
     return (
@@ -51,13 +51,25 @@ const Home = () => {
     const [products, setProducts] = useState([]);
 
     useEffect(() => {
-        setProducts(getProducts());
+        const fetchProducts = async () => {
+            try {
+                const data = await getProducts();
+                setProducts(data);
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            }
+        };
+        fetchProducts();
     }, []);
 
-    const handleOrder = (id) => {
-        const updatedProduct = placeOrder(id);
-        if (updatedProduct) {
-            setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
+    const handleOrder = async (product) => {
+        try {
+            const updatedProduct = await updateQuantity(product.id, product.quantity - 1);
+            if (updatedProduct) {
+                setProducts(prev => prev.map(p => p.id === product.id ? updatedProduct : p));
+            }
+        } catch (error) {
+            console.error('Error updating quantity:', error);
         }
     };
 
@@ -88,7 +100,7 @@ const Home = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                         >
-                            <ProductCard product={product} onOrder={() => handleOrder(product.id)} />
+                            <ProductCard product={product} onOrder={() => handleOrder(product)} />
                         </motion.div>
                     ))}
                     {featuredClothes.length === 0 && (
@@ -119,7 +131,7 @@ const Home = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1 }}
                             >
-                                <ProductCard product={product} onOrder={() => handleOrder(product.id)} />
+                                <ProductCard product={product} onOrder={() => handleOrder(product)} />
                             </motion.div>
                         ))}
                         {featuredJewelry.length === 0 && (
