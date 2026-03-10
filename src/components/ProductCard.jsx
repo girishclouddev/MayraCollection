@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 const ProductCard = ({ product, onOrder }) => {
     const [showModal, setShowModal] = useState(false);
-    const [orderDetails, setOrderDetails] = useState({ name: '', phone: '', address: '' });
+    const [orderDetails, setOrderDetails] = useState({ name: '', phone: '', address: '', deliveryMode: 'home' });
 
     const isSoldOut = product.quantity === 0;
 
@@ -41,11 +41,12 @@ const ProductCard = ({ product, onOrder }) => {
 
         // Send WhatsApp Message
         const phoneNumber = '917984964793';
-        const message = `*New Order from MayraCollection*\n\n*Product:* ${product.name}\n*Price:* ₹${product.price}\n\n*Customer Details:*\n*Name:* ${orderDetails.name}\n*Phone:* ${orderDetails.phone}\n*Address:* ${orderDetails.address}`;
+        const deliveryText = orderDetails.deliveryMode === 'home' ? 'Home Delivery (Parcel)' : 'Pickup from Shop';
+        const message = `*New Order from MayraCollection*\n_https://mayracollection.vercel.app/_\n\n*Product:* ${product.name}\n*Price:* ₹${product.price}\n\n*Customer Details:*\n*Name:* ${orderDetails.name}\n*Phone:* ${orderDetails.phone}\n*Delivery Mode:* ${deliveryText}\n*Address:* ${orderDetails.address}`;
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
         setShowModal(false);
-        setOrderDetails({ name: '', phone: '', address: '' });
+        setOrderDetails({ name: '', phone: '', address: '', deliveryMode: 'home' });
 
         // Open WhatsApp in new tab
         window.open(whatsappUrl, '_blank');
@@ -177,14 +178,44 @@ const ProductCard = ({ product, onOrder }) => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Preference</label>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="deliveryMode"
+                                                value="home"
+                                                checked={orderDetails.deliveryMode === 'home'}
+                                                onChange={(e) => setOrderDetails({ ...orderDetails, deliveryMode: e.target.value })}
+                                                className="text-primary-600 focus:ring-primary-500"
+                                            />
+                                            Home Delivery (Parcel)
+                                        </label>
+                                        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="deliveryMode"
+                                                value="pickup"
+                                                checked={orderDetails.deliveryMode === 'pickup'}
+                                                onChange={(e) => setOrderDetails({ ...orderDetails, deliveryMode: e.target.value })}
+                                                className="text-primary-600 focus:ring-primary-500"
+                                            />
+                                            Pickup from Shop
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className={`transition-opacity duration-300 ${orderDetails.deliveryMode === 'pickup' ? 'opacity-50' : 'opacity-100'}`}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Delivery Address {orderDetails.deliveryMode === 'pickup' && '(Optional)'}
+                                    </label>
                                     <textarea
-                                        required
+                                        required={orderDetails.deliveryMode === 'home'}
                                         rows="3"
                                         value={orderDetails.address}
                                         onChange={(e) => setOrderDetails({ ...orderDetails, address: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100"
                                         placeholder="Enter full delivery address with pincode"
+                                        disabled={orderDetails.deliveryMode === 'pickup'}
                                     ></textarea>
                                 </div>
 
