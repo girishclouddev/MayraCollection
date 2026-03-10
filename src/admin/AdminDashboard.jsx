@@ -82,7 +82,8 @@ const AdminDashboard = () => {
             quantity: '',
             image: null,
         });
-        document.getElementById('imageUpload').value = '';
+        const fileInput = document.getElementById('imageUpload');
+        if (fileInput) fileInput.value = '';
     };
 
     const handleEdit = (product) => {
@@ -139,7 +140,8 @@ const AdminDashboard = () => {
                 });
 
                 // Reset file input
-                document.getElementById('imageUpload').value = '';
+                const fileInput = document.getElementById('imageUpload');
+                if (fileInput) fileInput.value = '';
                 toast.success('Product added successfully!');
             }
         } catch (error) {
